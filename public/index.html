@@ -3,26 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AutoEstime — Simulateur de vente voiture</title>
+<title>Estimez votre voiture — MaCitadine.com</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c27;
-    --border: rgba(255,255,255,0.08);
-    --accent: #6366f1;
-    --accent2: #818cf8;
-    --accent-glow: rgba(99,102,241,0.3);
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --text: #f1f5f9;
-    --text-muted: #64748b;
-    --text-dim: #94a3b8;
-    --radius: 16px;
-    --radius-sm: 10px;
+    --bg: #fff5f6;
+    --surface: #ffffff;
+    --surface2: #fdf0f1;
+    --border: rgba(216,210,206,0.7);
+    --accent: #fd6a63;
+    --accent-light: #fad1d1;
+    --accent-glow: rgba(253,106,99,0.2);
+    --teal: #005163;
+    --teal-light: rgba(0,81,99,0.08);
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --text: #2e3a3d;
+    --text-muted: #8a9a9d;
+    --text-dim: #5a6f73;
+    --radius: 20px;
+    --radius-sm: 12px;
+    --shadow: 0 4px 24px rgba(0,81,99,0.08);
+    --shadow-hover: 0 8px 32px rgba(0,81,99,0.14);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
@@ -34,44 +38,40 @@
     overflow-x:hidden;
   }
 
-  /* Background ambient */
-  body::before {
-    content:'';
-    position:fixed; inset:0; z-index:0;
-    background:
-      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99,102,241,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(139,92,246,0.10) 0%, transparent 50%);
-    pointer-events:none;
-  }
-
   .container { max-width:960px; margin:0 auto; padding:0 20px; position:relative; z-index:1; }
 
   /* Header */
   header {
-    padding:28px 0 24px;
+    padding:20px 0;
     border-bottom:1px solid var(--border);
     margin-bottom:48px;
-    backdrop-filter:blur(20px);
     position:sticky; top:0; z-index:100;
-    background:rgba(10,10,15,0.85);
+    background:rgba(255,245,246,0.92);
+    backdrop-filter:blur(16px);
   }
   .header-inner { display:flex; align-items:center; justify-content:space-between; }
   .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
   .logo-icon {
-    width:38px; height:38px;
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
-    border-radius:10px;
+    width:40px; height:40px;
+    background:var(--teal);
+    border-radius:12px;
     display:flex; align-items:center; justify-content:center;
-    font-size:18px; box-shadow:0 0 20px rgba(99,102,241,0.4);
+    font-size:20px;
   }
-  .logo-text { font-weight:800; font-size:20px; letter-spacing:-0.5px; }
-  .logo-text span { color:var(--accent2); }
+  .logo-text {
+    font-family:'League Spartan',sans-serif;
+    font-weight:800; font-size:22px; letter-spacing:-0.5px;
+    color:var(--teal);
+  }
+  .logo-text span { color:var(--accent); }
   .badge {
-    background:rgba(99,102,241,0.15);
-    border:1px solid rgba(99,102,241,0.3);
-    color:var(--accent2);
-    padding:4px 12px; border-radius:100px;
-    font-size:12px; font-weight:600; letter-spacing:0.5px;
+    background:var(--accent-light);
+    border:1px solid rgba(253,106,99,0.3);
+    color:var(--accent);
+    padding:5px 14px; border-radius:100px;
+    font-size:11px; font-weight:700;
+    font-family:'League Spartan',sans-serif;
+    letter-spacing:0.8px; text-transform:uppercase;
   }
 
   /* Steps indicator */
@@ -86,28 +86,29 @@
     color:var(--text-muted);
     transition:all .3s ease; position:relative; z-index:1;
     flex-shrink:0;
+    font-family:'League Spartan',sans-serif;
   }
   .step-circle.active {
     border-color:var(--accent);
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    background:var(--accent);
     color:#fff;
-    box-shadow:0 0 20px var(--accent-glow);
+    box-shadow:0 4px 16px var(--accent-glow);
   }
   .step-circle.done {
-    border-color:var(--success);
-    background:var(--success);
+    border-color:var(--teal);
+    background:var(--teal);
     color:#fff;
   }
-  .step-label { font-size:12px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
-  .step-label.active { color:var(--text); }
-  .step-label.done { color:var(--success); }
+  .step-label { font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap; font-family:'League Spartan',sans-serif; }
+  .step-label.active { color:var(--accent); }
+  .step-label.done { color:var(--teal); }
   .step-connector {
     width:60px; height:2px;
     background:var(--border);
     transition:background .3s ease;
     flex-shrink:0;
   }
-  .step-connector.done { background:var(--success); }
+  .step-connector.done { background:var(--teal); }
   .step-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
 
   /* Cards */
@@ -115,130 +116,117 @@
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:var(--radius);
-    padding:32px;
-    position:relative; overflow:hidden;
-  }
-  .card::before {
-    content:'';
-    position:absolute; top:0; left:0; right:0; height:1px;
-    background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4),transparent);
+    padding:36px;
+    box-shadow:var(--shadow);
+    transition:box-shadow .2s ease;
   }
 
   /* Section titles */
-  .section-title { font-size:28px; font-weight:800; letter-spacing:-0.5px; margin-bottom:8px; }
+  .section-title {
+    font-family:'League Spartan',sans-serif;
+    font-size:28px; font-weight:800; letter-spacing:-0.5px;
+    margin-bottom:8px; color:var(--teal);
+  }
   .section-sub { color:var(--text-dim); font-size:15px; margin-bottom:32px; }
 
   /* Plate input */
-  .plate-wrap {
-    display:flex; gap:12px; align-items:stretch; flex-wrap:wrap;
-  }
-  .plate-input-group {
-    flex:1; min-width:200px;
-    position:relative;
-  }
+  .plate-wrap { display:flex; gap:12px; align-items:stretch; flex-wrap:wrap; }
+  .plate-input-group { flex:1; min-width:200px; position:relative; }
   .plate-input {
     width:100%;
-    background:rgba(255,255,255,0.04);
+    background:var(--surface);
     border:2px solid var(--border);
     border-radius:var(--radius-sm);
     padding:16px 20px 16px 56px;
     font-size:22px; font-weight:800; letter-spacing:6px;
-    color:var(--text);
+    color:var(--teal);
     text-transform:uppercase;
     outline:none;
     transition:all .2s ease;
-    font-family:'Inter',sans-serif;
+    font-family:'League Spartan',sans-serif;
   }
   .plate-input:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); }
   .plate-input::placeholder { letter-spacing:3px; font-weight:500; font-size:18px; color:var(--text-muted); }
-  .plate-prefix {
-    position:absolute; left:18px; top:50%; transform:translateY(-50%);
-    font-size:20px; pointer-events:none;
-  }
+  .plate-prefix { position:absolute; left:18px; top:50%; transform:translateY(-50%); font-size:20px; pointer-events:none; }
 
   .btn {
-    padding:16px 28px;
-    border-radius:var(--radius-sm);
+    padding:14px 28px;
+    border-radius:100px;
     font-size:15px; font-weight:700;
     border:none; cursor:pointer;
     transition:all .2s ease;
     display:inline-flex; align-items:center; gap:8px;
-    text-decoration:none; font-family:'Inter',sans-serif;
-    white-space:nowrap;
+    text-decoration:none;
+    font-family:'League Spartan',sans-serif;
+    white-space:nowrap; letter-spacing:0.2px;
   }
   .btn-primary {
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    background:var(--accent);
     color:#fff;
-    box-shadow:0 4px 24px var(--accent-glow);
+    box-shadow:0 4px 20px var(--accent-glow);
   }
-  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 32px var(--accent-glow); }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(253,106,99,0.35); }
   .btn-primary:active { transform:translateY(0); }
   .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
   .btn-secondary {
-    background:rgba(255,255,255,0.06);
-    color:var(--text-dim);
-    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--teal);
+    border:2px solid var(--teal);
   }
-  .btn-secondary:hover { background:rgba(255,255,255,0.1); color:var(--text); }
+  .btn-secondary:hover { background:var(--teal-light); }
   .btn-ghost { background:transparent; color:var(--text-muted); padding:10px 16px; }
-  .btn-ghost:hover { color:var(--text); }
+  .btn-ghost:hover { color:var(--teal); }
 
   /* Loading */
   .loading-wrap { display:flex; flex-direction:column; align-items:center; padding:48px 0; gap:20px; }
   .spinner {
-    width:48px; height:48px;
-    border:3px solid rgba(99,102,241,0.2);
+    width:44px; height:44px;
+    border:3px solid var(--accent-light);
     border-top-color:var(--accent);
     border-radius:50%;
     animation:spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-text { color:var(--text-dim); font-size:14px; }
+  .loading-text { color:var(--text-dim); font-size:14px; font-weight:600; font-family:'League Spartan',sans-serif; }
   .loading-sub { color:var(--text-muted); font-size:13px; }
 
   /* Vehicle card */
-  .vehicle-header {
-    display:flex; align-items:flex-start; justify-content:space-between;
-    gap:16px; flex-wrap:wrap; margin-bottom:28px;
-  }
-  .vehicle-brand { font-size:13px; font-weight:600; color:var(--accent2); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
-  .vehicle-name { font-size:30px; font-weight:800; letter-spacing:-0.5px; }
+  .vehicle-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:28px; }
+  .vehicle-brand { font-size:12px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; font-family:'League Spartan',sans-serif; }
+  .vehicle-name { font-size:30px; font-weight:800; letter-spacing:-0.5px; color:var(--teal); font-family:'League Spartan',sans-serif; }
   .vehicle-year { font-size:18px; color:var(--text-muted); font-weight:400; }
 
   .vehicle-tag {
     display:inline-flex; align-items:center; gap:6px;
     padding:6px 14px; border-radius:100px;
-    font-size:12px; font-weight:600; letter-spacing:0.3px;
+    font-size:12px; font-weight:700; letter-spacing:0.3px;
+    font-family:'League Spartan',sans-serif;
   }
-  .tag-essence   { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
-  .tag-diesel    { background:rgba(156,163,175,0.15); color:#9ca3af; border:1px solid rgba(156,163,175,0.3); }
-  .tag-hybride   { background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); }
-  .tag-electrique{ background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); }
-  .tag-gpl       { background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3); }
+  .tag-essence    { background:rgba(217,119,6,0.1);  color:#b45309; border:1px solid rgba(217,119,6,0.25); }
+  .tag-diesel     { background:rgba(107,114,128,0.1); color:#4b5563; border:1px solid rgba(107,114,128,0.25); }
+  .tag-hybride    { background:rgba(5,150,105,0.1);   color:#047857; border:1px solid rgba(5,150,105,0.25); }
+  .tag-electrique { background:var(--teal-light);     color:var(--teal); border:1px solid rgba(0,81,99,0.2); }
+  .tag-gpl        { background:rgba(249,115,22,0.1);  color:#ea580c; border:1px solid rgba(249,115,22,0.25); }
 
-  .vehicle-grid {
-    display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px;
-    margin-bottom:28px;
-  }
+  .vehicle-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:28px; }
   .vehicle-spec {
-    background:rgba(255,255,255,0.03);
+    background:var(--bg);
     border:1px solid var(--border);
     border-radius:var(--radius-sm); padding:14px;
   }
-  .spec-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
-  .spec-value { font-size:16px; font-weight:700; color:var(--text); }
+  .spec-label { font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; font-family:'League Spartan',sans-serif; }
+  .spec-value { font-size:16px; font-weight:700; color:var(--teal); }
   .spec-sub { font-size:12px; color:var(--text-dim); margin-top:2px; }
 
   /* Form */
   .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   @media(max-width:600px) { .form-grid { grid-template-columns:1fr; } }
-
   .form-group { display:flex; flex-direction:column; gap:8px; }
   .form-group.full { grid-column:1/-1; }
-  .form-label { font-size:13px; font-weight:600; color:var(--text-dim); }
+  .form-label { font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px; font-family:'League Spartan',sans-serif; }
   .form-input, .form-select {
-    background:rgba(255,255,255,0.04);
-    border:2px solid var(--border);
+    background:var(--surface);
+    border:1.5px solid var(--border);
     border-radius:var(--radius-sm);
     padding:13px 16px;
     font-size:15px; font-weight:500;
@@ -249,8 +237,8 @@
     appearance:none; -webkit-appearance:none;
   }
   .form-input:focus, .form-select:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); }
-  .form-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:40px; }
-  .form-select option { background:var(--surface2); color:var(--text); }
+  .form-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a9a9d' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:40px; }
+  .form-select option { background:#fff; color:var(--text); }
 
   /* Condition picker */
   .condition-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
@@ -261,57 +249,53 @@
     padding:14px 12px;
     cursor:pointer; text-align:center;
     transition:all .2s ease;
-    background:rgba(255,255,255,0.02);
+    background:var(--surface);
     position:relative;
   }
-  .condition-card:hover { border-color:var(--accent); background:rgba(99,102,241,0.05); }
-  .condition-card.selected { border-color:var(--accent); background:rgba(99,102,241,0.12); }
-  .condition-card.selected::after {
-    content:'✓';
-    position:absolute; top:6px; right:8px;
-    font-size:11px; color:var(--accent2); font-weight:800;
-  }
+  .condition-card:hover { border-color:var(--accent); background:rgba(253,106,99,0.04); transform:translateY(-1px); box-shadow:var(--shadow); }
+  .condition-card.selected { border-color:var(--accent); background:rgba(253,106,99,0.06); }
+  .condition-card.selected::after { content:'✓'; position:absolute; top:6px; right:8px; font-size:11px; color:var(--accent); font-weight:800; }
   .cond-emoji { font-size:22px; margin-bottom:6px; }
-  .cond-name { font-size:12px; font-weight:700; color:var(--text); }
+  .cond-name { font-size:12px; font-weight:700; color:var(--text); font-family:'League Spartan',sans-serif; }
   .cond-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
 
   /* Options */
   .options-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; }
   .option-chip {
-    border:2px solid var(--border);
+    border:1.5px solid var(--border);
     border-radius:var(--radius-sm);
     padding:10px 14px;
     cursor:pointer;
     font-size:13px; font-weight:500; color:var(--text-dim);
     transition:all .2s ease;
     display:flex; align-items:center; gap:8px;
-    user-select:none;
+    user-select:none; background:var(--surface);
   }
   .option-chip:hover { border-color:var(--accent); color:var(--text); }
-  .option-chip.selected { border-color:var(--accent); background:rgba(99,102,241,0.1); color:var(--text); }
+  .option-chip.selected { border-color:var(--accent); background:rgba(253,106,99,0.06); color:var(--text); }
   .option-dot { width:8px; height:8px; border-radius:50%; background:var(--border); flex-shrink:0; transition:background .2s; }
   .option-chip.selected .option-dot { background:var(--accent); }
 
   /* Results */
-  .price-hero { text-align:center; padding:32px 0 24px; }
-  .price-label { font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
-  .price-main { font-size:56px; font-weight:900; letter-spacing:-2px; }
-  .price-main .currency { font-size:32px; color:var(--text-dim); font-weight:600; vertical-align:super; font-size:28px; }
-  .price-range { margin-top:10px; font-size:14px; color:var(--text-muted); }
-  .price-range strong { color:var(--text-dim); }
+  .price-hero { text-align:center; padding:32px 0 24px; background:var(--teal); border-radius:var(--radius); margin:-36px -36px 28px; }
+  .price-label { font-size:12px; font-weight:700; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:12px; font-family:'League Spartan',sans-serif; }
+  .price-main { font-size:56px; font-weight:900; letter-spacing:-2px; color:#fff; font-family:'League Spartan',sans-serif; }
+  .price-main .currency { font-size:28px; color:rgba(255,255,255,0.7); font-weight:600; vertical-align:super; }
+  .price-range { margin-top:10px; font-size:14px; color:rgba(255,255,255,0.6); }
+  .price-range strong { color:rgba(255,255,255,0.9); }
 
   /* Gauge */
   .gauge-wrap { margin:24px 0; }
   .gauge-track {
-    height:10px; border-radius:100px;
-    background:linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 55%, #6366f1 80%, #8b5cf6 100%);
+    height:8px; border-radius:100px;
+    background:linear-gradient(90deg, #dc2626 0%, #f59e0b 35%, #059669 55%, #005163 80%, #fd6a63 100%);
     position:relative;
   }
   .gauge-needle {
     position:absolute; top:50%; transform:translate(-50%,-50%);
     width:20px; height:20px; border-radius:50%;
     background:#fff;
-    box-shadow:0 2px 8px rgba(0,0,0,0.5), 0 0 0 3px var(--accent);
+    box-shadow:0 2px 8px rgba(0,81,99,0.3), 0 0 0 3px var(--accent);
     transition:left 1s cubic-bezier(.34,1.56,.64,1);
   }
   .gauge-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--text-muted); }
@@ -319,14 +303,13 @@
   /* Market grid */
   .market-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
   @media(max-width:600px) { .market-grid { grid-template-columns:1fr; } }
-
   .market-card {
-    background:rgba(255,255,255,0.03);
+    background:var(--bg);
     border:1px solid var(--border);
     border-radius:var(--radius-sm); padding:16px;
   }
-  .market-card-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px; }
-  .market-card-value { font-size:18px; font-weight:800; }
+  .market-card-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted); margin-bottom:8px; font-family:'League Spartan',sans-serif; }
+  .market-card-value { font-size:18px; font-weight:800; color:var(--teal); font-family:'League Spartan',sans-serif; }
   .market-card-sub { font-size:12px; color:var(--text-dim); margin-top:4px; }
 
   .trend-up { color:var(--success); }
@@ -334,10 +317,10 @@
   .trend-stable { color:var(--warning); }
 
   /* Detail accordion */
-  .detail-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:14px; }
+  .detail-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; }
   .detail-row:last-child { border-bottom:none; }
-  .detail-key { color:var(--text-muted); }
-  .detail-val { font-weight:600; }
+  .detail-key { color:var(--text-dim); }
+  .detail-val { font-weight:700; color:var(--teal); }
   .detail-val.positive { color:var(--success); }
   .detail-val.negative { color:var(--danger); }
 
@@ -345,21 +328,21 @@
   .analysis-points { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
   .analysis-point {
     display:flex; gap:12px; align-items:flex-start;
-    padding:12px 14px;
-    background:rgba(255,255,255,0.03);
+    padding:12px 16px;
+    background:var(--bg);
     border-radius:var(--radius-sm);
     border-left:3px solid var(--accent);
     font-size:13px; color:var(--text-dim);
   }
-  .analysis-point-num { font-size:11px; font-weight:800; color:var(--accent2); flex-shrink:0; padding-top:1px; }
+  .analysis-point-num { font-size:11px; font-weight:800; color:var(--accent); flex-shrink:0; padding-top:1px; font-family:'League Spartan',sans-serif; }
 
   /* Conseil */
   .conseil-box {
-    background:rgba(16,185,129,0.08);
-    border:1px solid rgba(16,185,129,0.2);
+    background:rgba(0,81,99,0.06);
+    border:1px solid rgba(0,81,99,0.15);
     border-radius:var(--radius-sm);
     padding:16px 18px;
-    font-size:14px; color:#6ee7b7;
+    font-size:14px; color:var(--teal);
     display:flex; gap:12px; align-items:flex-start;
     margin-top:16px;
   }
@@ -370,13 +353,14 @@
   /* Platforms */
   .platforms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:16px; }
   .platform-card {
-    background:rgba(255,255,255,0.03); border:1px solid var(--border);
-    border-radius:var(--radius-sm); padding:14px;
-    text-align:center;
+    background:var(--bg); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:16px;
+    text-align:center; transition:all .2s ease;
   }
-  .platform-name { font-size:13px; font-weight:700; margin-bottom:4px; }
-  .platform-price { font-size:20px; font-weight:800; color:var(--accent2); }
-  .platform-note { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .platform-card:hover { transform:translateY(-2px); box-shadow:var(--shadow); }
+  .platform-name { font-size:12px; font-weight:700; margin-bottom:6px; color:var(--text-dim); font-family:'League Spartan',sans-serif; text-transform:uppercase; letter-spacing:0.5px; }
+  .platform-price { font-size:20px; font-weight:800; color:var(--teal); font-family:'League Spartan',sans-serif; }
+  .platform-note { font-size:11px; color:var(--text-muted); margin-top:4px; }
 
   /* Misc */
   .divider { border:none; border-top:1px solid var(--border); margin:24px 0; }
@@ -387,23 +371,17 @@
   .flex-end { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
   .flex-between { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
 
-  .alert {
-    padding:14px 18px; border-radius:var(--radius-sm);
-    font-size:14px; display:flex; gap:10px; align-items:flex-start;
-  }
-  .alert-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+  .alert { padding:14px 18px; border-radius:var(--radius-sm); font-size:14px; display:flex; gap:10px; align-items:flex-start; }
+  .alert-error { background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.2); color:#b91c1c; }
   .hidden { display:none !important; }
   .fade-in { animation:fadeIn .3s ease; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
   /* Demand badge */
-  .demand-badge {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:4px 10px; border-radius:100px; font-size:12px; font-weight:700;
-  }
-  .demand-forte { background:rgba(16,185,129,0.15); color:#10b981; }
-  .demand-normale { background:rgba(245,158,11,0.15); color:#f59e0b; }
-  .demand-faible { background:rgba(239,68,68,0.15); color:#ef4444; }
+  .demand-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:100px; font-size:12px; font-weight:700; font-family:'League Spartan',sans-serif; }
+  .demand-forte { background:rgba(5,150,105,0.1); color:#047857; }
+  .demand-normale { background:rgba(217,119,6,0.1); color:#b45309; }
+  .demand-faible { background:rgba(220,38,38,0.1); color:#b91c1c; }
 
   .prog-step {
     display:flex; align-items:center; gap:10px;
@@ -411,15 +389,19 @@
     font-size:13px; color:var(--text-muted);
     transition:all .3s ease;
   }
-  .prog-step[data-done="true"] { color:var(--success); background:rgba(16,185,129,0.06); }
-  .prog-step[data-active="true"] { color:var(--text); background:rgba(99,102,241,0.08); }
+  .prog-step[data-done="true"] { color:var(--success); background:rgba(5,150,105,0.06); }
+  .prog-step[data-active="true"] { color:var(--teal); background:var(--teal-light); font-weight:600; }
+  .ps-icon { font-size:15px; width:20px; flex-shrink:0; }
+  .ps-label { font-weight:500; }
+
   .ps-icon { font-size:15px; width:20px; flex-shrink:0; }
   .ps-label { font-weight:500; }
 
   @media(max-width:700px) {
     .card { padding:20px; }
+    .price-hero { margin:-20px -20px 20px; padding:24px 20px; }
     .section-title { font-size:22px; }
-    .price-main { font-size:42px; }
+    .price-main { font-size:40px; }
     .step-connector { width:32px; }
   }
 </style>
@@ -429,11 +411,11 @@
 <header>
   <div class="container">
     <div class="header-inner">
-      <a class="logo" href="#">
-        <div class="logo-icon">🚗</div>
-        <span class="logo-text">Auto<span>Estime</span></span>
+      <a class="logo" href="https://macitadine.com">
+        <div class="logo-icon">🐚</div>
+        <span class="logo-text">Ma<span>Citadine</span></span>
       </a>
-      <span class="badge">SIMULATEUR IA</span>
+      <span class="badge">Estimez votre voiture</span>
     </div>
   </div>
 </header>
@@ -475,8 +457,8 @@
   <!-- STEP 1: Plate -->
   <div id="step1" class="fade-in">
     <div class="card">
-      <div class="section-title">Quelle est la plaque ?</div>
-      <p class="section-sub">Entrez l'immatriculation pour identifier le véhicule automatiquement via notre base de données.</p>
+      <div class="section-title">Quelle est votre plaque ?</div>
+      <p class="section-sub">On identifie votre voiture automatiquement — c'est rapide et gratuit.</p>
 
       <div class="plate-wrap">
         <div class="plate-input-group">
