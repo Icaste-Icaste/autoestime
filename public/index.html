@@ -1264,6 +1264,7 @@ function renderResults(d) {
     { key:`Coefficient énergie (${det.bonus_energie_pct >= 0 ? '+' : ''}${det.bonus_energie_pct}%)`, val: det.bonus_energie_pct !== 0 ? (det.bonus_energie_pct > 0 ? '+' : '') + fmtMoney(Math.round(det.prix_base * det.bonus_energie_pct/100)) : '0 €', cls: det.bonus_energie_pct >= 0 ? 'positive' : 'negative' },
     { key:'Bonus options', val: det.bonus_options > 0 ? '+' + fmtMoney(det.bonus_options) : '0 €', cls: 'positive' },
   ];
+  if (det.decote_zfe_pct < 0)        rows.push({ key:`Décote ZFE / Crit'Air (${det.decote_zfe_pct}%)`,   val: fmtMoney(Math.round(d.prix_estime * det.decote_zfe_pct/100)),        cls:'negative' });
   if (det.decote_carrosserie_pct < 0) rows.push({ key:`Décote carrosserie (${det.decote_carrosserie_pct}%)`, val: fmtMoney(Math.round(d.prix_estime * det.decote_carrosserie_pct/100)), cls:'negative' });
   if (det.decote_interieur_pct < 0)  rows.push({ key:`Décote intérieur (${det.decote_interieur_pct}%)`,   val: fmtMoney(Math.round(d.prix_estime * det.decote_interieur_pct/100)),  cls:'negative' });
   if (det.decote_cles_pct < 0)       rows.push({ key:`Décote clés manquantes (${det.decote_cles_pct}%)`,  val: fmtMoney(Math.round(d.prix_estime * det.decote_cles_pct/100)),       cls:'negative' });

@@ -417,15 +417,30 @@ function findBasePrice(brand, model, year) {
 }
 
 const COND = { excellent:0.10, tres_bon:0.04, bon:0, correct:-0.06, mediocre:-0.16, accidente:-0.28 };
-const NRGY = { 'ELECTRIQUE':0.14,'HYBRIDE RECHARGEABLE':0.10,'HYBRIDE':0.07,'ESSENCE':0,'DIESEL':-0.06,'GPL':-0.12 };
+const NRGY = { 'ELECTRIQUE':0.14,'HYBRIDE RECHARGEABLE':0.10,'HYBRIDE':0.07,'ESSENCE':0,'DIESEL':-0.10,'GPL':-0.14 };
 const TYPE_FALLBACK = { CITADINE:13000, BERLINE:20000, SUV:28000, BREAK:22000, MONOSPACE:22000, CABRIOLET:28000, PICKUP:30000, UTILITAIRE:22000 };
+
+// Décote ZFE selon Crit'Air (marché France 2025)
+function critAirDecote(critAir, energie, annee) {
+  if (!critAir || energie === 'ELECTRIQUE') return 0;
+  const c = String(critAir).trim();
+  if (c === '0') return 0;
+  if (c === '1') return 0;
+  // Diesel pré-Euro 6 (avant 2019) supplémentaire
+  const dieselMalus = (energie === 'DIESEL' && annee < 2019) ? -0.04 : 0;
+  if (c === '2') return dieselMalus; // essence récente ou diesel Euro 6
+  if (c === '3') return -0.12 + dieselMalus; // diesel 2011-2018 → ZFE restrictif
+  if (c === '4') return -0.20 + dieselMalus; // diesel 2006-2011 → quasi invendable en ville
+  if (c === '5') return -0.28 + dieselMalus; // avant 2006 → invendable en ZFE
+  return dieselMalus;
+}
 
 const BODY_DECOTES  = { rayures:-2, bosses:-4, rouille:-8, parechoc:-4, parebrise:-5, peinture:-3 };
 const INTERIOR_DECOTES = { sieges:-3, odeurs:-5, tableau:-4, moquette:-2, climatisation:-3 };
 const KEYS_DECOTES  = { '2cles':0, '1cle':-3, '0cle':-6 };
 
 function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues = [], interiorIssues = [], nbCles = '2cles') {
-  const { marque, modele, annee, energie, type } = vehicleInfo;
+  const { marque, modele, annee, energie, type, crit_air } = vehicleInfo;
   const km = parseInt(mileage) || 80000;
   const year = parseInt(annee) || 2019;
 
@@ -447,10 +462,11 @@ function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues 
   const bodyPct     = bodyIssues.reduce((s, id) => s + (BODY_DECOTES[id] || 0), 0);
   const interiorPct = interiorIssues.reduce((s, id) => s + (INTERIOR_DECOTES[id] || 0), 0);
   const keysPct     = KEYS_DECOTES[nbCles] ?? 0;
+  const zfePct      = critAirDecote(crit_air, energie, year);
   const decotePct   = bodyPct + interiorPct + keysPct;
 
   const baseAdj  = (basePrice + kmAdj) * (1 + condFactor) * (1 + nrgyFactor) + optBonus;
-  const final    = Math.round(baseAdj * (1 + decotePct / 100) / 50) * 50;
+  const final    = Math.round(baseAdj * (1 + decotePct / 100) * (1 + zfePct) / 50) * 50;
 
   return {
     prix_estime: final,
@@ -466,6 +482,7 @@ function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues 
       decote_carrosserie_pct: bodyPct,
       decote_interieur_pct: interiorPct,
       decote_cles_pct: keysPct,
+      decote_zfe_pct: Math.round(zfePct * 100),
       decote_total_pct: decotePct,
     },
   };
@@ -535,7 +552,8 @@ app.post('/api/estimate-price', async (req, res) => {
         max_tokens: 500,
         messages: [{
           role: 'user',
-          content: `Expert cote auto France. ${vehicleInfo.marque} ${vehicleInfo.modele} ${vehicleInfo.annee} ${vehicleInfo.energie} ${mileage}km état "${condition}" prix base ${estimate.prix_estime}€.
+          content: `Expert cote auto France 2025. ${vehicleInfo.marque} ${vehicleInfo.modele} ${vehicleInfo.annee} ${vehicleInfo.energie}${vehicleInfo.crit_air ? ` Crit'Air ${vehicleInfo.crit_air}` : ''}, ${mileage}km, état "${condition}". Prix estimé ${estimate.prix_estime}€.
+Contexte marché : diesel pré-2019 très décoté (ZFE), surabondance de l'offre, acheteurs prudents. Sois RÉALISTE et CONSERVATEUR — mieux vaut légèrement sous-estimer que surestimer.
 JSON sans markdown: {"points":["<20 mots>","<20 mots>","<20 mots>"],"conseil":"<1 phrase>","tendance":"hausse"|"stable"|"baisse","demande":"forte"|"normale"|"faible","delai_vente":"ex: 2-3 semaines","cotes":{"argus_reprise":<entier>,"argus_particulier":<entier>,"leboncoin_min":<entier>,"leboncoin_median":<entier>,"leboncoin_max":<entier>,"la_centrale":<entier>,"autoscout24":<entier>}}`
         }],
       });
