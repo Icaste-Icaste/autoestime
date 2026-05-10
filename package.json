@@ -1,0 +1,15 @@
+{
+  "name": "simulateur-voiture-vente",
+  "version": "1.0.0",
+  "description": "Simulateur interactif de vente de voiture avec estimation IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.18.2"
+  }
+}

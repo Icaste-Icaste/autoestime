@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoEstime — Simulateur de vente voiture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: rgba(255,255,255,0.08);
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --accent-glow: rgba(99,102,241,0.3);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    font-family:'Inter',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  /* Background ambient */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99,102,241,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(139,92,246,0.10) 0%, transparent 50%);
+    pointer-events:none;
+  }
+
+  .container { max-width:960px; margin:0 auto; padding:0 20px; position:relative; z-index:1; }
+
+  /* Header */
+  header {
+    padding:28px 0 24px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:48px;
+    backdrop-filter:blur(20px);
+    position:sticky; top:0; z-index:100;
+    background:rgba(10,10,15,0.85);
+  }
+  .header-inner { display:flex; align-items:center; justify-content:space-between; }
+  .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .logo-icon {
+    width:38px; height:38px;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; box-shadow:0 0 20px rgba(99,102,241,0.4);
+  }
+  .logo-text { font-weight:800; font-size:20px; letter-spacing:-0.5px; }
+  .logo-text span { color:var(--accent2); }
+  .badge {
+    background:rgba(99,102,241,0.15);
+    border:1px solid rgba(99,102,241,0.3);
+    color:var(--accent2);
+    padding:4px 12px; border-radius:100px;
+    font-size:12px; font-weight:600; letter-spacing:0.5px;
+  }
+
+  /* Steps indicator */
+  .steps-wrap { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:48px; }
+  .step-item { display:flex; align-items:center; gap:0; }
+  .step-circle {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700;
+    border:2px solid var(--border);
+    background:var(--surface);
+    color:var(--text-muted);
+    transition:all .3s ease; position:relative; z-index:1;
+    flex-shrink:0;
+  }
+  .step-circle.active {
+    border-color:var(--accent);
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;
+    box-shadow:0 0 20px var(--accent-glow);
+  }
+  .step-circle.done {
+    border-color:var(--success);
+    background:var(--success);
+    color:#fff;
+  }
+  .step-label { font-size:12px; font-weight:500; color:var(--text-muted); white-space:nowrap; }
+  .step-label.active { color:var(--text); }
+  .step-label.done { color:var(--success); }
+  .step-connector {
+    width:60px; height:2px;
+    background:var(--border);
+    transition:background .3s ease;
+    flex-shrink:0;
+  }
+  .step-connector.done { background:var(--success); }
+  .step-col { display:flex; flex-direction:column; align-items:center; gap:8px; }
+
+  /* Cards */
+  .card {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:32px;
+    position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4),transparent);
+  }
+
+  /* Section titles */
+  .section-title { font-size:28px; font-weight:800; letter-spacing:-0.5px; margin-bottom:8px; }
+  .section-sub { color:var(--text-dim); font-size:15px; margin-bottom:32px; }
+
+  /* Plate input */
+  .plate-wrap {
+    display:flex; gap:12px; align-items:stretch; flex-wrap:wrap;
+  }
+  .plate-input-group {
+    flex:1; min-width:200px;
+    position:relative;
+  }
+  .plate-input {
+    width:100%;
+    background:rgba(255,255,255,0.04);
+    border:2px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:16px 20px 16px 56px;
+    font-size:22px; font-weight:800; letter-spacing:6px;
+    color:var(--text);
+    text-transform:uppercase;
+    outline:none;
+    transition:all .2s ease;
+    font-family:'Inter',sans-serif;
+  }
+  .plate-input:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); }
+  .plate-input::placeholder { letter-spacing:3px; font-weight:500; font-size:18px; color:var(--text-muted); }
+  .plate-prefix {
+    position:absolute; left:18px; top:50%; transform:translateY(-50%);
+    font-size:20px; pointer-events:none;
+  }
+
+  .btn {
+    padding:16px 28px;
+    border-radius:var(--radius-sm);
+    font-size:15px; font-weight:700;
+    border:none; cursor:pointer;
+    transition:all .2s ease;
+    display:inline-flex; align-items:center; gap:8px;
+    text-decoration:none; font-family:'Inter',sans-serif;
+    white-space:nowrap;
+  }
+  .btn-primary {
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;
+    box-shadow:0 4px 24px var(--accent-glow);
+  }
+  .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 32px var(--accent-glow); }
+  .btn-primary:active { transform:translateY(0); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .btn-secondary {
+    background:rgba(255,255,255,0.06);
+    color:var(--text-dim);
+    border:1px solid var(--border);
+  }
+  .btn-secondary:hover { background:rgba(255,255,255,0.1); color:var(--text); }
+  .btn-ghost { background:transparent; color:var(--text-muted); padding:10px 16px; }
+  .btn-ghost:hover { color:var(--text); }
+
+  /* Loading */
+  .loading-wrap { display:flex; flex-direction:column; align-items:center; padding:48px 0; gap:20px; }
+  .spinner {
+    width:48px; height:48px;
+    border:3px solid rgba(99,102,241,0.2);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { color:var(--text-dim); font-size:14px; }
+  .loading-sub { color:var(--text-muted); font-size:13px; }
+
+  /* Vehicle card */
+  .vehicle-header {
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-bottom:28px;
+  }
+  .vehicle-brand { font-size:13px; font-weight:600; color:var(--accent2); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .vehicle-name { font-size:30px; font-weight:800; letter-spacing:-0.5px; }
+  .vehicle-year { font-size:18px; color:var(--text-muted); font-weight:400; }
+
+  .vehicle-tag {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px; border-radius:100px;
+    font-size:12px; font-weight:600; letter-spacing:0.3px;
+  }
+  .tag-essence   { background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); }
+  .tag-diesel    { background:rgba(156,163,175,0.15); color:#9ca3af; border:1px solid rgba(156,163,175,0.3); }
+  .tag-hybride   { background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); }
+  .tag-electrique{ background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid rgba(99,102,241,0.3); }
+  .tag-gpl       { background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3); }
+
+  .vehicle-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px;
+    margin-bottom:28px;
+  }
+  .vehicle-spec {
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:14px;
+  }
+  .spec-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  .spec-value { font-size:16px; font-weight:700; color:var(--text); }
+  .spec-sub { font-size:12px; color:var(--text-dim); margin-top:2px; }
+
+  /* Form */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:600px) { .form-grid { grid-template-columns:1fr; } }
+
+  .form-group { display:flex; flex-direction:column; gap:8px; }
+  .form-group.full { grid-column:1/-1; }
+  .form-label { font-size:13px; font-weight:600; color:var(--text-dim); }
+  .form-input, .form-select {
+    background:rgba(255,255,255,0.04);
+    border:2px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:13px 16px;
+    font-size:15px; font-weight:500;
+    color:var(--text);
+    outline:none;
+    transition:all .2s ease;
+    font-family:'Inter',sans-serif;
+    appearance:none; -webkit-appearance:none;
+  }
+  .form-input:focus, .form-select:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); }
+  .form-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:40px; }
+  .form-select option { background:var(--surface2); color:var(--text); }
+
+  /* Condition picker */
+  .condition-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media(max-width:500px) { .condition-grid { grid-template-columns:repeat(2,1fr); } }
+  .condition-card {
+    border:2px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:14px 12px;
+    cursor:pointer; text-align:center;
+    transition:all .2s ease;
+    background:rgba(255,255,255,0.02);
+    position:relative;
+  }
+  .condition-card:hover { border-color:var(--accent); background:rgba(99,102,241,0.05); }
+  .condition-card.selected { border-color:var(--accent); background:rgba(99,102,241,0.12); }
+  .condition-card.selected::after {
+    content:'✓';
+    position:absolute; top:6px; right:8px;
+    font-size:11px; color:var(--accent2); font-weight:800;
+  }
+  .cond-emoji { font-size:22px; margin-bottom:6px; }
+  .cond-name { font-size:12px; font-weight:700; color:var(--text); }
+  .cond-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* Options */
+  .options-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; }
+  .option-chip {
+    border:2px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:10px 14px;
+    cursor:pointer;
+    font-size:13px; font-weight:500; color:var(--text-dim);
+    transition:all .2s ease;
+    display:flex; align-items:center; gap:8px;
+    user-select:none;
+  }
+  .option-chip:hover { border-color:var(--accent); color:var(--text); }
+  .option-chip.selected { border-color:var(--accent); background:rgba(99,102,241,0.1); color:var(--text); }
+  .option-dot { width:8px; height:8px; border-radius:50%; background:var(--border); flex-shrink:0; transition:background .2s; }
+  .option-chip.selected .option-dot { background:var(--accent); }
+
+  /* Results */
+  .price-hero { text-align:center; padding:32px 0 24px; }
+  .price-label { font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  .price-main { font-size:56px; font-weight:900; letter-spacing:-2px; }
+  .price-main .currency { font-size:32px; color:var(--text-dim); font-weight:600; vertical-align:super; font-size:28px; }
+  .price-range { margin-top:10px; font-size:14px; color:var(--text-muted); }
+  .price-range strong { color:var(--text-dim); }
+
+  /* Gauge */
+  .gauge-wrap { margin:24px 0; }
+  .gauge-track {
+    height:10px; border-radius:100px;
+    background:linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 55%, #6366f1 80%, #8b5cf6 100%);
+    position:relative;
+  }
+  .gauge-needle {
+    position:absolute; top:50%; transform:translate(-50%,-50%);
+    width:20px; height:20px; border-radius:50%;
+    background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.5), 0 0 0 3px var(--accent);
+    transition:left 1s cubic-bezier(.34,1.56,.64,1);
+  }
+  .gauge-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--text-muted); }
+
+  /* Market grid */
+  .market-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+  @media(max-width:600px) { .market-grid { grid-template-columns:1fr; } }
+
+  .market-card {
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:16px;
+  }
+  .market-card-label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin-bottom:8px; }
+  .market-card-value { font-size:18px; font-weight:800; }
+  .market-card-sub { font-size:12px; color:var(--text-dim); margin-top:4px; }
+
+  .trend-up { color:var(--success); }
+  .trend-down { color:var(--danger); }
+  .trend-stable { color:var(--warning); }
+
+  /* Detail accordion */
+  .detail-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:14px; }
+  .detail-row:last-child { border-bottom:none; }
+  .detail-key { color:var(--text-muted); }
+  .detail-val { font-weight:600; }
+  .detail-val.positive { color:var(--success); }
+  .detail-val.negative { color:var(--danger); }
+
+  /* Analysis points */
+  .analysis-points { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .analysis-point {
+    display:flex; gap:12px; align-items:flex-start;
+    padding:12px 14px;
+    background:rgba(255,255,255,0.03);
+    border-radius:var(--radius-sm);
+    border-left:3px solid var(--accent);
+    font-size:13px; color:var(--text-dim);
+  }
+  .analysis-point-num { font-size:11px; font-weight:800; color:var(--accent2); flex-shrink:0; padding-top:1px; }
+
+  /* Conseil */
+  .conseil-box {
+    background:rgba(16,185,129,0.08);
+    border:1px solid rgba(16,185,129,0.2);
+    border-radius:var(--radius-sm);
+    padding:16px 18px;
+    font-size:14px; color:#6ee7b7;
+    display:flex; gap:12px; align-items:flex-start;
+    margin-top:16px;
+  }
+
+  /* Actions */
+  .actions-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:32px; }
+
+  /* Platforms */
+  .platforms-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:16px; }
+  .platform-card {
+    background:rgba(255,255,255,0.03); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:14px;
+    text-align:center;
+  }
+  .platform-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .platform-price { font-size:20px; font-weight:800; color:var(--accent2); }
+  .platform-note { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* Misc */
+  .divider { border:none; border-top:1px solid var(--border); margin:24px 0; }
+  .mt-8 { margin-top:8px; }
+  .mt-16 { margin-top:16px; }
+  .mt-24 { margin-top:24px; }
+  .mt-32 { margin-top:32px; }
+  .flex-end { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; }
+  .flex-between { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+
+  .alert {
+    padding:14px 18px; border-radius:var(--radius-sm);
+    font-size:14px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .alert-error { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; }
+  .hidden { display:none !important; }
+  .fade-in { animation:fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Demand badge */
+  .demand-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:100px; font-size:12px; font-weight:700;
+  }
+  .demand-forte { background:rgba(16,185,129,0.15); color:#10b981; }
+  .demand-normale { background:rgba(245,158,11,0.15); color:#f59e0b; }
+  .demand-faible { background:rgba(239,68,68,0.15); color:#ef4444; }
+
+  .prog-step {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px; border-radius:8px;
+    font-size:13px; color:var(--text-muted);
+    transition:all .3s ease;
+  }
+  .prog-step[data-done="true"] { color:var(--success); background:rgba(16,185,129,0.06); }
+  .prog-step[data-active="true"] { color:var(--text); background:rgba(99,102,241,0.08); }
+  .ps-icon { font-size:15px; width:20px; flex-shrink:0; }
+  .ps-label { font-weight:500; }
+
+  @media(max-width:700px) {
+    .card { padding:20px; }
+    .section-title { font-size:22px; }
+    .price-main { font-size:42px; }
+    .step-connector { width:32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a class="logo" href="#">
+        <div class="logo-icon">🚗</div>
+        <span class="logo-text">Auto<span>Estime</span></span>
+      </a>
+      <span class="badge">SIMULATEUR IA</span>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- Steps -->
+  <div class="steps-wrap" id="stepsBar">
+    <div class="step-item">
+      <div class="step-col">
+        <div class="step-circle active" id="s1">1</div>
+        <span class="step-label active" id="sl1">Plaque</span>
+      </div>
+    </div>
+    <div class="step-connector" id="sc1"></div>
+    <div class="step-item">
+      <div class="step-col">
+        <div class="step-circle" id="s2">2</div>
+        <span class="step-label" id="sl2">Véhicule</span>
+      </div>
+    </div>
+    <div class="step-connector" id="sc2"></div>
+    <div class="step-item">
+      <div class="step-col">
+        <div class="step-circle" id="s3">3</div>
+        <span class="step-label" id="sl3">Détails</span>
+      </div>
+    </div>
+    <div class="step-connector" id="sc4"></div>
+    <div class="step-item">
+      <div class="step-col">
+        <div class="step-circle" id="s4">4</div>
+        <span class="step-label" id="sl4">Estimation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: Plate -->
+  <div id="step1" class="fade-in">
+    <div class="card">
+      <div class="section-title">Quelle est la plaque ?</div>
+      <p class="section-sub">Entrez l'immatriculation pour identifier le véhicule automatiquement via notre base de données.</p>
+
+      <div class="plate-wrap">
+        <div class="plate-input-group">
+          <span class="plate-prefix">🔍</span>
+          <input
+            type="text"
+            class="plate-input"
+            id="plateInput"
+            placeholder="AB-123-CD"
+            maxlength="10"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+        <button class="btn btn-primary" id="decodeBtn" onclick="decodePlate()">
+          <span>Identifier</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <div id="decodeError" class="alert alert-error mt-16 hidden"></div>
+
+      <!-- Suggestions -->
+      <div style="margin-top:28px; padding-top:24px; border-top:1px solid var(--border);">
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Exemples rapides</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="fillPlate('AB-123-CD')">AB-123-CD</button>
+          <button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="fillPlate('EF-456-GH')">EF-456-GH</button>
+          <button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="fillPlate('IJ-789-KL')">IJ-789-KL</button>
+          <button class="btn btn-ghost" style="font-size:13px;padding:8px 14px;" onclick="fillPlate('MN-012-OP')">MN-012-OP</button>
+        </div>
+      </div>
+
+      <div id="loadingDecode" class="loading-wrap hidden">
+        <div class="spinner"></div>
+        <p class="loading-text">Interrogation de la base SIV...</p>
+        <p class="loading-sub">Décodage de la plaque en cours</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Vehicle info (editable) -->
+  <div id="step2" class="hidden">
+    <div class="card fade-in">
+      <div class="flex-between" style="margin-bottom:24px;">
+        <div>
+          <div class="section-title" style="font-size:22px;margin-bottom:4px;">Vérifiez les informations</div>
+          <p style="color:var(--text-muted);font-size:14px;">Corrigez si nécessaire — ces données servent au calcul de la cote.</p>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Plaque</div>
+          <div style="font-size:20px;font-weight:900;letter-spacing:4px;color:var(--accent2);" id="vPlate">XX-000-XX</div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Marque</label>
+          <input type="text" class="form-input" id="fMarque" placeholder="Ex: PEUGEOT" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modèle</label>
+          <input type="text" class="form-input" id="fModele" placeholder="Ex: 308" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Année de mise en circulation</label>
+          <input type="number" class="form-input" id="fAnnee" placeholder="2020" min="1990" max="2025">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Énergie</label>
+          <select class="form-select" id="fEnergie">
+            <option value="ESSENCE">Essence</option>
+            <option value="DIESEL">Diesel</option>
+            <option value="HYBRIDE">Hybride</option>
+            <option value="HYBRIDE RECHARGEABLE">Hybride rechargeable</option>
+            <option value="ELECTRIQUE">Électrique</option>
+            <option value="GPL">GPL</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type de carrosserie</label>
+          <select class="form-select" id="fType">
+            <option value="BERLINE">Berline</option>
+            <option value="SUV">SUV / Crossover</option>
+            <option value="BREAK">Break</option>
+            <option value="CITADINE">Citadine</option>
+            <option value="MONOSPACE">Monospace</option>
+            <option value="CABRIOLET">Cabriolet</option>
+            <option value="PICKUP">Pickup</option>
+            <option value="UTILITAIRE">Utilitaire</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Puissance (ch)</label>
+          <input type="number" class="form-input" id="fPuissance" placeholder="130" min="50" max="1000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motorisation / Cylindrée</label>
+          <input type="text" class="form-input" id="fCylindree" placeholder="Ex: 1.2 PureTech 130" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Couleur</label>
+          <input type="text" class="form-input" id="fCouleur" placeholder="Ex: Gris Artense" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Finition / Version</label>
+          <input type="text" class="form-input" id="fVersion" placeholder="Ex: Allure Pack" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transmission</label>
+          <select class="form-select" id="fTransmission">
+            <option value="Manuelle">Manuelle</option>
+            <option value="Automatique">Automatique</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex-end">
+        <button class="btn btn-secondary" onclick="goTo(1)">← Changer de plaque</button>
+        <button class="btn btn-primary" onclick="saveVehicleAndContinue()">
+          Continuer
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Details -->
+  <div id="step3" class="hidden">
+    <div class="card fade-in">
+      <div class="section-title">Détails du véhicule</div>
+      <p class="section-sub">Ces informations affinent l'estimation. Soyez précis pour obtenir la cote la plus juste.</p>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Kilométrage actuel</label>
+          <input type="number" class="form-input" id="mileageInput" placeholder="80 000" min="0" max="999999" value="80000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombre de propriétaires</label>
+          <select class="form-select" id="ownersInput">
+            <option value="1">1 propriétaire</option>
+            <option value="2" selected>2 propriétaires</option>
+            <option value="3">3 propriétaires</option>
+            <option value="4">4+ propriétaires</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <label class="form-label" style="margin-bottom:12px;display:block;">État général du véhicule</label>
+        <div class="condition-grid">
+          <div class="condition-card" data-condition="excellent" onclick="selectCondition(this)">
+            <div class="cond-emoji">✨</div>
+            <div class="cond-name">Excellent</div>
+            <div class="cond-desc">Comme neuf</div>
+          </div>
+          <div class="condition-card" data-condition="tres_bon" onclick="selectCondition(this)">
+            <div class="cond-emoji">🌟</div>
+            <div class="cond-name">Très bon</div>
+            <div class="cond-desc">Très peu de défauts</div>
+          </div>
+          <div class="condition-card selected" data-condition="bon" onclick="selectCondition(this)">
+            <div class="cond-emoji">👍</div>
+            <div class="cond-name">Bon</div>
+            <div class="cond-desc">Quelques traces</div>
+          </div>
+          <div class="condition-card" data-condition="correct" onclick="selectCondition(this)">
+            <div class="cond-emoji">🔧</div>
+            <div class="cond-name">Correct</div>
+            <div class="cond-desc">Entretien à faire</div>
+          </div>
+          <div class="condition-card" data-condition="mediocre" onclick="selectCondition(this)">
+            <div class="cond-emoji">⚠️</div>
+            <div class="cond-name">Médiocre</div>
+            <div class="cond-desc">Travaux nécessaires</div>
+          </div>
+          <div class="condition-card" data-condition="accidente" onclick="selectCondition(this)">
+            <div class="cond-emoji">💥</div>
+            <div class="cond-name">Accidenté</div>
+            <div class="cond-desc">Sinistres déclarés</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carrosserie -->
+      <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border);">
+        <label class="form-label" style="margin-bottom:4px;display:block;">🚗 État de la carrosserie</label>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Cochez les défauts présents (décotes cumulables)</p>
+        <div class="options-grid" id="bodyGrid"></div>
+      </div>
+
+      <!-- Intérieur -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+        <label class="form-label" style="margin-bottom:4px;display:block;">🪑 État de l'intérieur</label>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Cochez les défauts présents</p>
+        <div class="options-grid" id="interiorGrid"></div>
+      </div>
+
+      <!-- Clés -->
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+        <label class="form-label" style="margin-bottom:12px;display:block;">🔑 Nombre de clés</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;" id="keysGrid"></div>
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);">
+        <label class="form-label" style="margin-bottom:12px;display:block;">Options & équipements présents</label>
+        <div class="options-grid" id="optionsGrid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div id="estimateError" class="alert alert-error mt-16 hidden"></div>
+
+      <div class="flex-end">
+        <button class="btn btn-secondary" onclick="goTo(2)">← Retour</button>
+        <button class="btn btn-primary" id="estimateBtn" onclick="estimatePrice()">
+          Calculer la cote
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="loadingEstimate" class="hidden" style="margin-top:24px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span id="progressLabel" style="font-size:14px;font-weight:600;color:var(--text);">Initialisation...</span>
+          <span id="progressPct" style="font-size:13px;font-weight:700;color:var(--accent2);">0%</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:100px;overflow:hidden;">
+          <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:100px;transition:width 0.6s ease;"></div>
+        </div>
+        <div id="progressSteps" style="display:flex;flex-direction:column;gap:8px;margin-top:20px;">
+          <div class="prog-step" id="ps1" data-done="false">
+            <span class="ps-icon">⏳</span><span class="ps-label">Calcul du prix de base</span>
+          </div>
+          <div class="prog-step" id="ps2" data-done="false">
+            <span class="ps-icon">⏳</span><span class="ps-label">Analyse du marché IA (Argus, LBC...)</span>
+          </div>
+          <div class="prog-step" id="ps3" data-done="false">
+            <span class="ps-icon">⏳</span><span class="ps-label">Génération des cotes par plateforme</span>
+          </div>
+          <div class="prog-step" id="ps4" data-done="false">
+            <span class="ps-icon">⏳</span><span class="ps-label">Finalisation des résultats</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Results -->
+  <div id="step4" class="hidden">
+    <div class="card fade-in">
+
+      <!-- Price hero -->
+      <div class="price-hero">
+        <div class="price-label">Estimation de vente</div>
+        <div class="price-main">
+          <span class="currency">€</span><span id="rPrice">0</span>
+        </div>
+        <div class="price-range">
+          Fourchette : <strong id="rMin">0€</strong> — <strong id="rMax">0€</strong>
+        </div>
+      </div>
+
+      <!-- Gauge -->
+      <div class="gauge-wrap">
+        <div class="gauge-track">
+          <div class="gauge-needle" id="gaugeNeedle" style="left:50%"></div>
+        </div>
+        <div class="gauge-labels">
+          <span>Bas du marché</span>
+          <span>Prix moyen</span>
+          <span>Haut du marché</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Market cards -->
+      <div class="market-grid">
+        <div class="market-card">
+          <div class="market-card-label">Tendance marché</div>
+          <div class="market-card-value" id="rTendance">—</div>
+          <div class="market-card-sub">sur 3 derniers mois</div>
+        </div>
+        <div class="market-card">
+          <div class="market-card-label">Demande</div>
+          <div class="market-card-value" id="rDemande">—</div>
+          <div class="market-card-sub" id="rDelai">—</div>
+        </div>
+        <div class="market-card">
+          <div class="market-card-label">Prix min. conseillé</div>
+          <div class="market-card-value" id="rMinCard">—</div>
+          <div class="market-card-sub">ne pas descendre en dessous</div>
+        </div>
+        <div class="market-card">
+          <div class="market-card-label">Prix max. vendable</div>
+          <div class="market-card-value" id="rMaxCard">—</div>
+          <div class="market-card-sub">au-delà les acheteurs fuient</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- LeBonCoin real prices -->
+      <div id="lbcSection">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <p style="font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">
+            Annonces LeBonCoin similaires
+            <span id="lbcBadge" style="display:none;"></span>
+          </p>
+          <span id="lbcStatus" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+        <div id="lbcLoading" class="hidden" style="display:flex;align-items:center;gap:10px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border);">
+          <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
+          <span style="font-size:13px;color:var(--text-muted);">Recherche des annonces en cours sur LeBonCoin...</span>
+        </div>
+        <div id="lbcStats" class="hidden" style="margin-bottom:14px;">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
+            <div class="vehicle-spec"><div class="spec-label">Prix médian</div><div class="spec-value" id="lbcMedian">—</div></div>
+            <div class="vehicle-spec"><div class="spec-label">Prix moyen</div><div class="spec-value" id="lbcMean">—</div></div>
+            <div class="vehicle-spec"><div class="spec-label">Le moins cher</div><div class="spec-value" id="lbcMin">—</div></div>
+            <div class="vehicle-spec"><div class="spec-label">Le plus cher</div><div class="spec-value" id="lbcMax">—</div></div>
+          </div>
+        </div>
+        <div id="lbcListings" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="lbcEmpty" class="hidden" style="padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border);font-size:13px;color:var(--text-muted);">
+          Aucune annonce trouvée pour ce véhicule sur LeBonCoin.
+        </div>
+        <div id="lbcNotConfigured" class="hidden" style="padding:14px 16px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;font-size:13px;color:#fbbf24;">
+          💡 Ajoutez <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">APIFY_API_TOKEN</code> dans votre <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">.env</code> pour voir les vraies annonces LeBonCoin en temps réel.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Argus & platform prices -->
+      <div id="cotesSection">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <p style="font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;">Cotes & Prix par plateforme</p>
+          <span style="font-size:11px;color:var(--text-muted);background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);padding:3px 8px;border-radius:100px;">Analyse IA marché mai 2025</span>
+        </div>
+        <div id="platformsGrid" class="platforms-grid"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Analysis -->
+      <div>
+        <p style="font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Analyse marché</p>
+        <div class="analysis-points" id="rPoints"></div>
+        <div class="conseil-box" id="rConseil"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Detail calculation -->
+      <div>
+        <p style="font-size:13px;font-weight:700;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Détail du calcul</p>
+        <div id="rDetail"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="goTo(3)">← Modifier</button>
+        <button class="btn btn-secondary" onclick="printEstimate()">
+          🖨️ Imprimer
+        </button>
+        <button class="btn btn-primary" onclick="resetAll()">
+          ↩ Nouvelle estimation
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="height:60px;"></div>
+
+</div>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let currentStep = 1;
+let vehicleData = null;
+let estimateData = null;
+let selectedOptions = new Set();
+
+const OPTIONS = [
+  { id:'toit_ouvrant',   label:'Toit ouvrant', icon:'🌤' },
+  { id:'cuir',           label:'Sièges cuir',  icon:'💺' },
+  { id:'gps',            label:'GPS intégré',  icon:'🗺' },
+  { id:'camera',         label:'Caméra recul', icon:'📷' },
+  { id:'radar',          label:'Radars park.', icon:'📡' },
+  { id:'android_auto',   label:'Android Auto', icon:'📱' },
+  { id:'led',            label:'Phares LED',   icon:'💡' },
+  { id:'keyless',        label:'Accès mains libres', icon:'🔑' },
+  { id:'chauffage',      label:'Sièges chauffants', icon:'🔥' },
+  { id:'hayon',          label:'Hayon électrique', icon:'🚗' },
+  { id:'jantes',         label:'Jantes alliage 18"', icon:'⚙️' },
+  { id:'pack_hiver',     label:'Pack hiver',   icon:'❄️' },
+  { id:'sport_pack',     label:'Pack sport',   icon:'🏎' },
+  { id:'cruise',         label:'Régulat. adapt.', icon:'🎛' },
+  { id:'hifi',           label:'Système HiFi', icon:'🎵' },
+  { id:'tow_hook',       label:'Attelage',     icon:'🔗' },
+];
+
+// ---------------------------------------------------------------------------
+// Défauts carrosserie / intérieur / clés
+// ---------------------------------------------------------------------------
+const BODY_ISSUES = [
+  { id:'rayures',    label:'Rayures légères',       icon:'〰️', pct:-2 },
+  { id:'bosses',     label:'Bosses / impacts',       icon:'💢', pct:-4 },
+  { id:'rouille',    label:'Rouille visible',        icon:'🟤', pct:-8 },
+  { id:'parechoc',   label:'Pare-chocs endommagé',  icon:'⚠️', pct:-4 },
+  { id:'parebrise',  label:'Pare-brise fissuré',     icon:'🔲', pct:-5 },
+  { id:'peinture',   label:'Peinture oxydée / mate', icon:'🎨', pct:-3 },
+];
+
+const INTERIOR_ISSUES = [
+  { id:'sieges',     label:'Sièges abîmés / déchirés', icon:'💺', pct:-3 },
+  { id:'odeurs',     label:'Odeurs (tabac, animal)',    icon:'💨', pct:-5 },
+  { id:'tableau',    label:'Tableau de bord cassé',    icon:'🔧', pct:-4 },
+  { id:'moquette',   label:'Moquette très sale',        icon:'🧹', pct:-2 },
+  { id:'climatisation', label:'Clim. HS / à recharger', icon:'❄️', pct:-3 },
+];
+
+const KEYS_OPTIONS = [
+  { id:'2cles',  label:'2 clés ou plus', icon:'🔑🔑', pct:0  },
+  { id:'1cle',   label:'1 seule clé',    icon:'🔑',   pct:-3 },
+  { id:'0cle',   label:'Sans clé',       icon:'❌',   pct:-6 },
+];
+
+let selectedBodyIssues    = new Set();
+let selectedInteriorIssues = new Set();
+let selectedKeys = '2cles';
+
+function buildDefautGrids() {
+  const makeChip = (item, set, onToggle) => `
+    <div class="option-chip" id="defaut_${item.id}" onclick="${onToggle}('${item.id}', this)">
+      <span class="option-dot"></span>
+      <span>${item.icon} ${item.label} <span style="color:var(--danger);font-size:11px;font-weight:700;">${item.pct}%</span></span>
+    </div>`;
+
+  document.getElementById('bodyGrid').innerHTML =
+    BODY_ISSUES.map(i => makeChip(i, selectedBodyIssues, 'toggleBody')).join('');
+
+  document.getElementById('interiorGrid').innerHTML =
+    INTERIOR_ISSUES.map(i => makeChip(i, selectedInteriorIssues, 'toggleInterior')).join('');
+
+  document.getElementById('keysGrid').innerHTML = KEYS_OPTIONS.map(k => `
+    <div class="condition-card${k.id === selectedKeys ? ' selected' : ''}"
+         style="min-width:120px;flex:1;"
+         data-keys="${k.id}" onclick="selectKeys('${k.id}', this)">
+      <div class="cond-emoji">${k.icon}</div>
+      <div class="cond-name">${k.label}</div>
+      <div class="cond-desc" style="color:${k.pct < 0 ? 'var(--danger)' : 'var(--success)'};">${k.pct === 0 ? 'Standard' : k.pct + '%'}</div>
+    </div>`).join('');
+}
+
+function toggleBody(id, el) {
+  selectedBodyIssues.has(id) ? selectedBodyIssues.delete(id) : selectedBodyIssues.add(id);
+  el.classList.toggle('selected');
+}
+
+function toggleInterior(id, el) {
+  selectedInteriorIssues.has(id) ? selectedInteriorIssues.delete(id) : selectedInteriorIssues.add(id);
+  el.classList.toggle('selected');
+}
+
+function selectKeys(id, el) {
+  selectedKeys = id;
+  document.querySelectorAll('#keysGrid .condition-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  buildOptions();
+  buildDefautGrids();
+  document.getElementById('plateInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') decodePlate();
+  });
+  document.getElementById('plateInput').addEventListener('input', formatPlate);
+});
+
+function buildOptions() {
+  const g = document.getElementById('optionsGrid');
+  g.innerHTML = OPTIONS.map(o => `
+    <div class="option-chip" id="opt_${o.id}" onclick="toggleOption('${o.id}', this)">
+      <span class="option-dot"></span>
+      <span>${o.icon} ${o.label}</span>
+    </div>
+  `).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Plate formatting
+// ---------------------------------------------------------------------------
+function formatPlate(e) {
+  let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  let formatted = '';
+  if (v.length <= 2) formatted = v;
+  else if (v.length <= 5) formatted = v.slice(0,2) + '-' + v.slice(2);
+  else formatted = v.slice(0,2) + '-' + v.slice(2,5) + '-' + v.slice(5,7);
+  e.target.value = formatted;
+}
+
+function fillPlate(plate) {
+  document.getElementById('plateInput').value = plate;
+}
+
+// ---------------------------------------------------------------------------
+// Steps
+// ---------------------------------------------------------------------------
+function goTo(step) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step' + i);
+    if (el) el.classList.toggle('hidden', i !== step);
+  });
+  currentStep = step;
+  updateStepBar(step);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateStepBar(active) {
+  [1,2,3,4].forEach(i => {
+    const circle = document.getElementById('s' + i);
+    const label  = document.getElementById('sl' + i);
+    circle.className = 'step-circle' + (i < active ? ' done' : i === active ? ' active' : '');
+    circle.textContent = i < active ? '✓' : i;
+    label.className = 'step-label' + (i < active ? ' done' : i === active ? ' active' : '');
+    if (i < 4) {
+      const conn = document.getElementById('sc' + i);
+      if (conn) conn.className = 'step-connector' + (i < active ? ' done' : '');
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// STEP 1 → decode plate
+// ---------------------------------------------------------------------------
+async function decodePlate() {
+  const plate = document.getElementById('plateInput').value.trim();
+  if (!plate || plate.length < 4) {
+    showError('decodeError', 'Veuillez saisir une plaque valide (ex: AB-123-CD)');
+    return;
+  }
+
+  hideError('decodeError');
+  setLoading('loadingDecode', true);
+  setBtn('decodeBtn', true, 'Identification...');
+
+  try {
+    const resp = await fetch('/api/decode-plate', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ plate }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Erreur serveur');
+
+    vehicleData = data;
+    renderVehicle(plate, data);
+    goTo(2);
+  } catch(err) {
+    showError('decodeError', '❌ ' + (err.message || 'Erreur de connexion'));
+  } finally {
+    setLoading('loadingDecode', false);
+    setBtn('decodeBtn', false, 'Identifier');
+  }
+}
+
+function renderVehicle(plate, d) {
+  document.getElementById('vPlate').textContent = plate;
+
+  // Populate editable fields
+  document.getElementById('fMarque').value      = d.marque || '';
+  document.getElementById('fModele').value      = d.modele || '';
+  document.getElementById('fAnnee').value       = d.annee || '';
+  document.getElementById('fCylindree').value   = d.cylindree || '';
+  document.getElementById('fPuissance').value   = d.puissance_ch || '';
+  document.getElementById('fCouleur').value     = d.couleur || '';
+  document.getElementById('fVersion').value     = d.version || '';
+
+  // Énergie select
+  const energieEl = document.getElementById('fEnergie');
+  const energieVal = (d.energie || 'ESSENCE').toUpperCase();
+  [...energieEl.options].forEach(o => { o.selected = o.value === energieVal; });
+
+  // Type select
+  const typeEl = document.getElementById('fType');
+  const typeVal = (d.type || 'BERLINE').toUpperCase();
+  [...typeEl.options].forEach(o => { o.selected = o.value === typeVal; });
+
+  // Transmission select
+  const transEl = document.getElementById('fTransmission');
+  const transVal = d.transmission || '';
+  [...transEl.options].forEach(o => { o.selected = transVal.toLowerCase().includes(o.value.toLowerCase()); });
+}
+
+function saveVehicleAndContinue() {
+  vehicleData = {
+    ...vehicleData,
+    marque:       document.getElementById('fMarque').value.trim().toUpperCase(),
+    modele:       document.getElementById('fModele').value.trim().toUpperCase(),
+    annee:        parseInt(document.getElementById('fAnnee').value) || vehicleData?.annee,
+    energie:      document.getElementById('fEnergie').value,
+    type:         document.getElementById('fType').value,
+    puissance_ch: parseInt(document.getElementById('fPuissance').value) || vehicleData?.puissance_ch,
+    cylindree:    document.getElementById('fCylindree').value.trim(),
+    couleur:      document.getElementById('fCouleur').value.trim(),
+    version:      document.getElementById('fVersion').value.trim(),
+    transmission: document.getElementById('fTransmission').value,
+  };
+  goTo(3);
+}
+
+// ---------------------------------------------------------------------------
+// STEP 3 → condition / options
+// ---------------------------------------------------------------------------
+function selectCondition(el) {
+  document.querySelectorAll('.condition-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleOption(id, el) {
+  if (selectedOptions.has(id)) {
+    selectedOptions.delete(id);
+    el.classList.remove('selected');
+  } else {
+    selectedOptions.add(id);
+    el.classList.add('selected');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Progress animation
+// ---------------------------------------------------------------------------
+let progressTimer = null;
+
+const PROGRESS_STEPS = [
+  { id:'ps1', label:'Calcul du prix de base',               pct: 20, delay: 300  },
+  { id:'ps2', label:'Analyse du marché IA (Argus, LBC...)', pct: 50, delay: 1200 },
+  { id:'ps3', label:'Génération des cotes par plateforme',  pct: 80, delay: 4000 },
+  { id:'ps4', label:'Finalisation des résultats',           pct: 95, delay: 8000 },
+];
+
+function startProgress() {
+  // Reset
+  PROGRESS_STEPS.forEach(s => {
+    const el = document.getElementById(s.id);
+    el.dataset.done = 'false';
+    el.dataset.active = 'false';
+    el.querySelector('.ps-icon').textContent = '⏳';
+  });
+  setProgressBar(0, 'Démarrage...');
+
+  PROGRESS_STEPS.forEach((step, i) => {
+    setTimeout(() => {
+      // Mark previous as done
+      if (i > 0) {
+        const prev = document.getElementById(PROGRESS_STEPS[i-1].id);
+        prev.dataset.done = 'true';
+        prev.dataset.active = 'false';
+        prev.querySelector('.ps-icon').textContent = '✅';
+      }
+      const el = document.getElementById(step.id);
+      el.dataset.active = 'true';
+      setProgressBar(step.pct, step.label);
+    }, step.delay);
+  });
+}
+
+function stopProgress() {
+  // All done
+  PROGRESS_STEPS.forEach(s => {
+    const el = document.getElementById(s.id);
+    el.dataset.done = 'true';
+    el.dataset.active = 'false';
+    el.querySelector('.ps-icon').textContent = '✅';
+  });
+  setProgressBar(100, 'Terminé !');
+}
+
+function setProgressBar(pct, label) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+// ---------------------------------------------------------------------------
+// STEP 3 → estimate
+// ---------------------------------------------------------------------------
+async function estimatePrice() {
+  if (!vehicleData) return goTo(1);
+
+  const mileage = document.getElementById('mileageInput').value;
+  const condEl = document.querySelector('.condition-card.selected');
+  if (!condEl) {
+    showError('estimateError', 'Veuillez sélectionner l\'état du véhicule');
+    return;
+  }
+  const condition = condEl.dataset.condition;
+
+  hideError('estimateError');
+  setLoading('loadingEstimate', true);
+  setBtn('estimateBtn', true, 'Calcul en cours...');
+  startProgress();
+
+  try {
+    const resp = await fetch('/api/estimate-price', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        vehicleInfo: vehicleData,
+        mileage: parseInt(mileage),
+        condition,
+        options: Array.from(selectedOptions),
+        bodyIssues: Array.from(selectedBodyIssues),
+        interiorIssues: Array.from(selectedInteriorIssues),
+        nbCles: selectedKeys,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Erreur serveur');
+
+    stopProgress();
+    await new Promise(r => setTimeout(r, 400));
+
+    estimateData = data;
+    renderResults(data);
+    goTo(4);
+  } catch(err) {
+    showError('estimateError', '❌ ' + (err.message || 'Erreur de connexion'));
+  } finally {
+    setLoading('loadingEstimate', false);
+    setBtn('estimateBtn', false, 'Calculer la cote');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// STEP 4 → render results + LBC polling
+// ---------------------------------------------------------------------------
+let lbcPollTimer = null;
+let lbcPollCount = 0;
+const LBC_MAX_POLLS = 20; // ~80s max
+
+function renderResults(d) {
+  animateCounter('rPrice', 0, d.prix_estime, 800);
+  document.getElementById('rMin').textContent = fmtMoney(d.fourchette_min);
+  document.getElementById('rMax').textContent = fmtMoney(d.fourchette_max);
+
+  setTimeout(() => { document.getElementById('gaugeNeedle').style.left = '50%'; }, 200);
+
+  const a = d.analyse;
+  const tendMap   = { hausse:'📈 En hausse', stable:'➡️ Stable', baisse:'📉 En baisse' };
+  const tendClass = { hausse:'trend-up', stable:'trend-stable', baisse:'trend-down' };
+  document.getElementById('rTendance').innerHTML = `<span class="${tendClass[a.tendance]||'trend-stable'}">${tendMap[a.tendance]||'Stable'}</span>`;
+  document.getElementById('rDemande').innerHTML  = `<span class="demand-badge demand-${a.demande||'normale'}">● Demande ${a.demande||'normale'}</span>`;
+  document.getElementById('rDelai').textContent  = 'Délai estimé : ' + (a.delai_vente || '3-4 semaines');
+  document.getElementById('rMinCard').textContent = fmtMoney(d.fourchette_min);
+  document.getElementById('rMaxCard').textContent = fmtMoney(d.fourchette_max);
+
+  const base = d.prix_estime;
+  const cp = d.platformPrices;
+  const platforms = cp ? [
+    { name:"L'Argus", icon:'📋', price: cp.argus_particulier, note:'Cote particulier Argus', highlight: true },
+    { name:"Argus reprise", icon:'🏪', price: cp.argus_reprise, note:'Prix rachat professionnel' },
+    { name:'LeBonCoin', icon:'🟠', price: cp.leboncoin_median, note:`Fourchette ${fmtMoney(cp.leboncoin_min)} – ${fmtMoney(cp.leboncoin_max)}`, highlight: true },
+    { name:'La Centrale', icon:'🔵', price: cp.la_centrale, note:'Cote officielle' },
+    { name:'AutoScout24', icon:'🌍', price: cp.autoscout24, note:'Acheteurs européens' },
+    { name:'Motorway', icon:'⚡', price: Math.round(base * 0.93 / 50)*50, note:'Vente rapide pro' },
+  ] : [
+    { name:'LeBonCoin',    icon:'🟠', price: Math.round(base * 1.04 / 50)*50, note:'Particulier → particulier', highlight: true },
+    { name:'La Centrale',  icon:'🔵', price: Math.round(base * 1.01 / 50)*50, note:'Référence cote officielle' },
+    { name:'AutoScout24',  icon:'🌍', price: Math.round(base * 1.05 / 50)*50, note:'Acheteurs européens' },
+    { name:"L'Argus",      icon:'📋', price: Math.round(base * 0.97 / 50)*50, note:'Cote reprise pro', highlight: true },
+    { name:'Motorway',     icon:'⚡', price: Math.round(base * 0.93 / 50)*50, note:'Vente rapide pro' },
+    { name:'BCA Expertise',icon:'🏷', price: Math.round(base * 0.88 / 50)*50, note:'Enchères pro' },
+  ];
+  document.getElementById('platformsGrid').innerHTML = platforms.map(p => `
+    <div class="platform-card" style="${p.highlight ? 'border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.06);' : ''}">
+      <div class="platform-name">${p.icon} ${p.name}</div>
+      <div class="platform-price">${fmtMoney(p.price)}</div>
+      <div class="platform-note">${p.note}</div>
+    </div>`).join('');
+
+  document.getElementById('rPoints').innerHTML = (a.points || []).map((pt, i) => `
+    <div class="analysis-point"><span class="analysis-point-num">${i+1}</span><span>${pt}</span></div>`).join('');
+  document.getElementById('rConseil').innerHTML = `💡 <strong>Conseil :</strong>&nbsp;&nbsp;${a.conseil || ''}`;
+
+  const det = d.detail_calcul, kmAdj = det.ajustement_km;
+  const rows = [
+    { key:'Prix de base (base de données)', val: fmtMoney(det.prix_base) },
+    { key:'Ajustement kilométrage', val: (kmAdj >= 0 ? '+' : '') + fmtMoney(kmAdj), cls: kmAdj >= 0 ? 'positive' : 'negative' },
+    { key:`Coefficient état (${det.bonus_etat_pct >= 0 ? '+' : ''}${det.bonus_etat_pct}%)`, val: det.bonus_etat_pct !== 0 ? (det.bonus_etat_pct > 0 ? '+' : '') + fmtMoney(Math.round(det.prix_base * det.bonus_etat_pct/100)) : '0 €', cls: det.bonus_etat_pct >= 0 ? 'positive' : 'negative' },
+    { key:`Coefficient énergie (${det.bonus_energie_pct >= 0 ? '+' : ''}${det.bonus_energie_pct}%)`, val: det.bonus_energie_pct !== 0 ? (det.bonus_energie_pct > 0 ? '+' : '') + fmtMoney(Math.round(det.prix_base * det.bonus_energie_pct/100)) : '0 €', cls: det.bonus_energie_pct >= 0 ? 'positive' : 'negative' },
+    { key:'Bonus options', val: det.bonus_options > 0 ? '+' + fmtMoney(det.bonus_options) : '0 €', cls: 'positive' },
+  ];
+  if (det.decote_carrosserie_pct < 0) rows.push({ key:`Décote carrosserie (${det.decote_carrosserie_pct}%)`, val: fmtMoney(Math.round(d.prix_estime * det.decote_carrosserie_pct/100)), cls:'negative' });
+  if (det.decote_interieur_pct < 0)  rows.push({ key:`Décote intérieur (${det.decote_interieur_pct}%)`,   val: fmtMoney(Math.round(d.prix_estime * det.decote_interieur_pct/100)),  cls:'negative' });
+  if (det.decote_cles_pct < 0)       rows.push({ key:`Décote clés manquantes (${det.decote_cles_pct}%)`,  val: fmtMoney(Math.round(d.prix_estime * det.decote_cles_pct/100)),       cls:'negative' });
+  if (det.decote_total_pct < 0)      rows.push({ key:`Décote totale défauts (${det.decote_total_pct}%)`,  val: fmtMoney(Math.round(d.prix_estime * det.decote_total_pct/100)),      cls:'negative' });
+  rows.push({ key:'Estimation finale', val: `<strong>${fmtMoney(d.prix_estime)}</strong>` });
+  document.getElementById('rDetail').innerHTML = rows.map(r => `<div class="detail-row"><span class="detail-key">${r.key}</span><span class="detail-val ${r.cls||''}">${r.val}</span></div>`).join('');
+
+  // Start LBC polling if Apify run was started
+  stopLbcPoll();
+  if (d.apifyRunId && d.apifyDatasetId) {
+    document.getElementById('lbcLoading').classList.remove('hidden');
+    document.getElementById('lbcNotConfigured').classList.add('hidden');
+    document.getElementById('lbcStatus').textContent = 'Chargement en cours...';
+    lbcPollCount = 0;
+    lbcPollTimer = setInterval(() => pollLbc(d.apifyRunId, d.apifyDatasetId), 4000);
+  } else {
+    document.getElementById('lbcNotConfigured').classList.remove('hidden');
+    document.getElementById('lbcLoading').classList.add('hidden');
+  }
+}
+
+function stopLbcPoll() {
+  if (lbcPollTimer) { clearInterval(lbcPollTimer); lbcPollTimer = null; }
+}
+
+async function pollLbc(runId, datasetId) {
+  lbcPollCount++;
+  if (lbcPollCount > LBC_MAX_POLLS) {
+    stopLbcPoll();
+    document.getElementById('lbcLoading').classList.add('hidden');
+    document.getElementById('lbcStatus').textContent = 'Délai dépassé.';
+    return;
+  }
+  document.getElementById('lbcStatus').textContent = `Recherche... (${lbcPollCount * 4}s)`;
+
+  try {
+    const resp = await fetch(`/api/lbc-status/${runId}?datasetId=${datasetId}`);
+    const data = await resp.json();
+
+    if (data.status === 'done') {
+      stopLbcPoll();
+      document.getElementById('lbcLoading').classList.add('hidden');
+      renderLbcResults(data.lbc);
+    } else if (data.status === 'error') {
+      stopLbcPoll();
+      document.getElementById('lbcLoading').classList.add('hidden');
+      document.getElementById('lbcStatus').textContent = 'Erreur de scraping.';
+    }
+  } catch (e) {
+    console.warn('[lbc poll]', e.message);
+  }
+}
+
+function renderLbcResults(lbc) {
+  if (!lbc || lbc.count === 0) {
+    document.getElementById('lbcEmpty').classList.remove('hidden');
+    document.getElementById('lbcStatus').textContent = '';
+    return;
+  }
+
+  document.getElementById('lbcStatus').textContent = `${lbc.count} annonce${lbc.count > 1 ? 's' : ''} trouvée${lbc.count > 1 ? 's' : ''}`;
+
+  const badge = document.getElementById('lbcBadge');
+  badge.style.display = 'inline-flex';
+  badge.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:#10b981;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;vertical-align:middle;';
+  badge.textContent = `✓ ${lbc.count} annonces réelles`;
+
+  // Stats
+  document.getElementById('lbcStats').classList.remove('hidden');
+  document.getElementById('lbcMedian').textContent = fmtMoney(lbc.median);
+  document.getElementById('lbcMean').textContent   = fmtMoney(lbc.mean);
+  document.getElementById('lbcMin').textContent    = fmtMoney(lbc.min);
+  document.getElementById('lbcMax').textContent    = fmtMoney(lbc.max);
+
+  // Update gauge using real median vs our estimate
+  if (estimateData && lbc.median) {
+    const our = estimateData.prix_estime;
+    const med = lbc.median;
+    // Position: 0%=very cheap, 50%=at median, 100%=very expensive
+    const ratio = our / med;
+    const pct = Math.max(5, Math.min(95, 50 + (ratio - 1) * 100));
+    document.getElementById('gaugeNeedle').style.left = pct + '%';
+  }
+
+  // Listings
+  const listingsEl = document.getElementById('lbcListings');
+  if (lbc.listings && lbc.listings.length > 0) {
+    listingsEl.innerHTML = lbc.listings.map(l => `
+      <a href="${l.url || '#'}" target="_blank" rel="noopener" style="text-decoration:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;transition:border-color .2s;cursor:pointer;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.titre || 'Annonce LeBonCoin'}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              ${l.km ? `${Number(l.km).toLocaleString('fr-FR')} km` : ''}${l.km && l.ville ? ' · ' : ''}${l.ville || ''}${l.date ? ' · ' + new Date(l.date).toLocaleDateString('fr-FR') : ''}
+            </div>
+          </div>
+          <div style="font-size:18px;font-weight:800;color:var(--accent2);white-space:nowrap;">${fmtMoney(l.prix)}</div>
+          <div style="font-size:12px;color:var(--text-muted);">→</div>
+        </div>
+      </a>`).join('');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function fmtMoney(n) {
+  if (n == null || isNaN(n)) return '—';
+  const abs = Math.abs(Math.round(n));
+  const str = abs.toLocaleString('fr-FR') + ' €';
+  return n < 0 ? '−' + str : str;
+}
+
+function animateCounter(id, from, to, duration) {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const val = Math.round(from + (to - from) * ease);
+    el.textContent = val.toLocaleString('fr-FR');
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function hideError(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+function setLoading(id, show) {
+  document.getElementById(id).classList.toggle('hidden', !show);
+}
+
+function setBtn(id, disabled, text) {
+  const btn = document.getElementById(id);
+  btn.disabled = disabled;
+  const span = btn.querySelector('span');
+  if (span) span.textContent = text;
+}
+
+function selectCondition(el) {
+  document.querySelectorAll('.condition-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function resetAll() {
+  vehicleData = null;
+  estimateData = null;
+  selectedOptions.clear();
+  selectedBodyIssues.clear();
+  selectedInteriorIssues.clear();
+  selectedKeys = '2cles';
+  document.getElementById('plateInput').value = '';
+  document.querySelectorAll('.condition-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector('[data-condition="bon"]').classList.add('selected');
+  buildOptions();
+  buildDefautGrids();
+  document.getElementById('mileageInput').value = '80000';
+  goTo(1);
+}
+
+function printEstimate() {
+  window.print();
+}
+</script>
+</body>
+</html>
