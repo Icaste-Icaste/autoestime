@@ -454,7 +454,8 @@ function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues 
   }
 
   const refKm = (2025 - year) * 15000;
-  const kmAdj     = (km - refKm) > 0 ? -(km - refKm) * 0.04 : Math.abs(km - refKm) * 0.025;
+  const kmAdjRaw  = (km - refKm) > 0 ? -(km - refKm) * 0.04 : Math.abs(km - refKm) * 0.015;
+  const kmAdj     = Math.max(-basePrice * 0.45, Math.min(basePrice * 0.28, kmAdjRaw));
   const condFactor = COND[condition] ?? 0;
   const nrgyFactor = NRGY[energie?.toUpperCase()] ?? 0;
   const optBonus   = Math.min(options.length * 400, 3000);
