@@ -183,16 +183,44 @@ function normalizeEnergie(raw) {
   return 'ESSENCE';
 }
 
+// Modèles connus → type forcé (corrige les erreurs de classification SIV)
+const MODEL_TYPE_OVERRIDE = {
+  // Citadines
+  'PUNTO':'CITADINE','TWINGO':'CITADINE','AYGO':'CITADINE','C1':'CITADINE',
+  '107':'CITADINE','108':'CITADINE','SMART':'CITADINE','FORTWO':'CITADINE',
+  'AGILA':'CITADINE','MUSA':'CITADINE','YPSILON':'CITADINE','PANDA':'CITADINE',
+  'SWIFT':'CITADINE','SPLASH':'CITADINE','ALTO':'CITADINE','IGNIS':'CITADINE',
+  'UP':'CITADINE','LUPO':'CITADINE','FOX':'CITADINE','CORSA':'CITADINE',
+  // SUVs mal classifiés
+  'SANTA FE':'SUV','SANTA_FE':'SUV','TUCSON':'SUV','TERRACAN':'SUV',
+  'DISCOVERY SPORT':'SUV','DISCOVERY_SPORT':'SUV','FREELANDER':'SUV',
+  'SPORTAGE':'SUV','SORENTO':'SUV','KOLEOS':'SUV','QASHQAI':'SUV',
+  'YETI':'SUV','TIGUAN':'SUV','TOUAREG':'SUV','KAROQ':'SUV',
+  'CAPTIVA':'SUV','ANTARA':'SUV','VITARA':'SUV','GRAND VITARA':'SUV',
+  'RAV4':'SUV','CR-V':'SUV','HR-V':'SUV','X-TRAIL':'SUV',
+  // Monospaces
+  'SCENIC':'MONOSPACE','GRAND SCENIC':'MONOSPACE','ZAFIRA':'MONOSPACE',
+  'ESPACE':'MONOSPACE','GALAXY':'MONOSPACE','SHARAN':'MONOSPACE',
+};
+
 function normalizeType(raw) {
   const r = String(raw).toUpperCase();
-  if (r.includes('SUV') || r.includes('4X4') || r.includes('TOUT TERRAIN')) return 'SUV';
-  if (r.includes('BREAK')) return 'BREAK';
+  if (r.includes('SUV') || r.includes('4X4') || r.includes('TOUT TERRAIN') || r.includes('CROSSOVER')) return 'SUV';
+  if (r.includes('BREAK') || r.includes('SW') || r.includes('ESTATE')) return 'BREAK';
   if (r.includes('CABRIO') || r.includes('DECAP') || r.includes('ROADSTER')) return 'CABRIOLET';
-  if (r.includes('MONO') || r.includes('MINIVAN')) return 'MONOSPACE';
+  if (r.includes('MONO') || r.includes('MINIVAN') || r.includes('MPV')) return 'MONOSPACE';
   if (r.includes('PICKUP')) return 'PICKUP';
   if (r.includes('CITA') || r.includes('MINI')) return 'CITADINE';
   if (r.includes('FOURGON') || r.includes('UTILITAIRE')) return 'UTILITAIRE';
   return 'BERLINE';
+}
+
+function resolveVehicleType(marque, modele, rawType) {
+  const m = String(modele).toUpperCase();
+  for (const [key, type] of Object.entries(MODEL_TYPE_OVERRIDE)) {
+    if (m.includes(key)) return type;
+  }
+  return normalizeType(rawType);
 }
 
 // Claude fallback — realistic simulation when no real API is configured
@@ -357,11 +385,12 @@ const vehicleDB = {
     'KUGA':    { 2018:17000, 2019:20000, 2020:23000, 2021:26000, 2022:30000, 2023:34000 },
   },
   HYUNDAI: {
-    'I20':     { 2018:9000,  2019:10500, 2020:12000, 2021:14000, 2022:16000, 2023:18500 },
-    'I30':     { 2018:12000, 2019:14000, 2020:16000, 2021:18500, 2022:21000 },
-    'TUCSON':  { 2018:18000, 2019:21000, 2020:24000, 2021:28000, 2022:33000, 2023:38000 },
-    'IONIQ 5': { 2021:32000, 2022:37000, 2023:43000 },
-    'KONA':    { 2018:16000, 2019:19000, 2020:22000, 2021:25000, 2022:29000, 2023:33000 },
+    'I20':      { 2018:9000,  2019:10500, 2020:12000, 2021:14000, 2022:16000, 2023:18500 },
+    'I30':      { 2018:12000, 2019:14000, 2020:16000, 2021:18500, 2022:21000 },
+    'TUCSON':   { 2018:18000, 2019:21000, 2020:24000, 2021:28000, 2022:33000, 2023:38000 },
+    'IONIQ 5':  { 2021:32000, 2022:37000, 2023:43000 },
+    'KONA':     { 2018:16000, 2019:19000, 2020:22000, 2021:25000, 2022:29000, 2023:33000 },
+    'SANTA FE': { 2009:9500,  2012:11000, 2015:13000, 2018:18000, 2019:20000, 2021:26000 },
   },
   KIA: {
     'CEED':    { 2018:12000, 2019:14000, 2020:16000, 2021:18500, 2022:21500 },
@@ -383,6 +412,7 @@ const vehicleDB = {
     '500':     { 2018:9000,  2019:10000, 2020:11000, 2021:12500, 2022:14000, 2023:16000 },
     'TIPO':    { 2018:9000,  2019:10500, 2020:12000, 2021:13500, 2022:15000 },
     '500E':    { 2021:19000, 2022:22000, 2023:26000 },
+    'PUNTO':   { 2014:5000,  2015:5500,  2016:6500,  2017:7000,  2018:7500  },
   },
   OPEL: {
     'CORSA':   { 2018:8000,  2019:9500,  2020:11500, 2021:13500, 2022:16000, 2023:18500 },
@@ -394,6 +424,16 @@ const vehicleDB = {
     'XC40':    { 2018:27000, 2019:31000, 2020:35000, 2021:40000, 2022:46000, 2023:52000 },
     'XC60':    { 2018:35000, 2019:40000, 2020:46000, 2021:53000, 2022:61000, 2023:70000 },
     'XC90':    { 2018:45000, 2019:52000, 2020:60000, 2021:69000, 2022:79000 },
+  },
+  'LAND ROVER': {
+    'DISCOVERY SPORT': { 2015:18000, 2017:22000, 2019:27000, 2020:30000, 2021:34000, 2022:39000 },
+    'RANGE ROVER EVOQUE': { 2015:16000, 2017:20000, 2019:25000, 2021:32000, 2022:37000 },
+    'FREELANDER':        { 2010:8000, 2012:10000, 2014:12000 },
+  },
+  SUZUKI: {
+    'SWIFT':   { 2008:5500, 2010:6000, 2013:7000, 2015:8000, 2017:9500, 2019:11000, 2021:13000 },
+    'VITARA':  { 2015:12000, 2017:14000, 2019:16000, 2021:19000, 2022:22000 },
+    'SX4':     { 2014:8000, 2016:10000, 2018:12000, 2020:14000 },
   },
 };
 
@@ -440,7 +480,8 @@ const INTERIOR_DECOTES = { sieges:-3, odeurs:-5, tableau:-4, moquette:-2, climat
 const KEYS_DECOTES  = { '2cles':0, '1cle':-3, '0cle':-6 };
 
 function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues = [], interiorIssues = [], nbCles = '2cles') {
-  const { marque, modele, annee, energie, type, crit_air } = vehicleInfo;
+  const { marque, modele, annee, energie, crit_air } = vehicleInfo;
+  const type = resolveVehicleType(marque, modele, vehicleInfo.type);
   const km = parseInt(mileage) || 80000;
   const year = parseInt(annee) || 2019;
 
@@ -452,6 +493,8 @@ function calcEstimate(vehicleInfo, mileage, condition, options = [], bodyIssues 
     basePrice = (TYPE_FALLBACK[type?.toUpperCase()] || 20000) * Math.pow(0.90, age);
     source = 'fallback';
   }
+  // Prix plancher : une voiture en état correct vaut toujours au moins 800€
+  basePrice = Math.max(basePrice, 800);
 
   const refKm = (2025 - year) * 15000;
   const kmAdjRaw  = (km - refKm) > 0 ? -(km - refKm) * 0.04 : Math.abs(km - refKm) * 0.015;
