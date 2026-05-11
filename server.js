@@ -270,7 +270,7 @@ async function startApifyRun(searchUrl) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ searchUrl, maxItems: 30, browseMode: false }),
+      body: JSON.stringify({ searchUrl, maxItems: 8, browseMode: false }),
     }
   );
   if (!resp.ok) throw new Error(`Apify start HTTP ${resp.status}`);
@@ -631,7 +631,7 @@ JSON sans markdown: {"points":["<20 mots>","<20 mots>","<20 mots>"],"conseil":"<
 // Poll LeBonCoin Apify run status
 app.get('/api/lbc-status/:runId', async (req, res) => {
   const { runId } = req.params;
-  const { datasetId } = req.query;
+  const { datasetId, baseEstimate } = req.query;
   if (!APIFY_TOKEN) return res.status(400).json({ error: 'Apify non configuré' });
 
   try {
@@ -639,7 +639,15 @@ app.get('/api/lbc-status/:runId', async (req, res) => {
     if (status === 'SUCCEEDED') {
       const items = await getApifyResults(datasetId);
       const stats = analyzeLbcPrices(items);
-      return res.json({ status: 'done', lbc: stats });
+
+      // Prix ajusté = moyenne entre notre cote et la médiane LBC
+      let prixAjuste = null;
+      if (stats && stats.median && baseEstimate) {
+        const base = parseInt(baseEstimate);
+        prixAjuste = Math.round((base + stats.median) / 2 / 50) * 50;
+      }
+
+      return res.json({ status: 'done', lbc: stats, prixAjuste });
     }
     if (status === 'FAILED' || status === 'TIMED-OUT' || status === 'ABORTED') {
       return res.json({ status: 'error', message: status });

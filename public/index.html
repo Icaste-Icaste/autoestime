@@ -775,7 +775,7 @@
         </div>
         <div id="lbcLoading" class="hidden" style="display:flex;align-items:center;gap:10px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border);">
           <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
-          <span style="font-size:13px;color:var(--text-muted);">Recherche des annonces en cours sur LeBonCoin...</span>
+          <span style="font-size:13px;color:var(--text-muted);">Recherche de 5 annonces similaires sur LeBonCoin pour affiner le prix...</span>
         </div>
         <div id="lbcStats" class="hidden" style="margin-bottom:14px;">
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
@@ -1297,16 +1297,35 @@ async function pollLbc(runId, datasetId) {
     document.getElementById('lbcStatus').textContent = 'Délai dépassé.';
     return;
   }
-  document.getElementById('lbcStatus').textContent = `Recherche... (${lbcPollCount * 4}s)`;
+  document.getElementById('lbcStatus').textContent = `Affinage du prix... (${lbcPollCount * 4}s)`;
 
   try {
-    const resp = await fetch(`/api/lbc-status/${runId}?datasetId=${datasetId}`);
+    const base = estimateData?.prix_estime || 0;
+    const resp = await fetch(`/api/lbc-status/${runId}?datasetId=${datasetId}&baseEstimate=${base}`);
     const data = await resp.json();
 
     if (data.status === 'done') {
       stopLbcPoll();
       document.getElementById('lbcLoading').classList.add('hidden');
       renderLbcResults(data.lbc);
+
+      // Mise à jour du prix avec la moyenne cote + LBC
+      if (data.prixAjuste && estimateData) {
+        const ancien = estimateData.prix_estime;
+        const nouveau = data.prixAjuste;
+        estimateData.prix_ajuste = nouveau;
+
+        // Anime le prix principal vers le nouveau
+        animateCounter('rPrice', ancien, nouveau, 800);
+        document.getElementById('rMin').textContent = fmtMoney(Math.round(nouveau * 0.91 / 50) * 50);
+        document.getElementById('rMax').textContent = fmtMoney(Math.round(nouveau * 1.09 / 50) * 50);
+
+        // Badge d'affinage
+        const badge = document.createElement('div');
+        badge.style.cssText = 'margin-top:10px;font-size:12px;font-weight:700;color:#005163;background:rgba(0,81,99,0.08);border:1px solid rgba(0,81,99,0.2);padding:5px 14px;border-radius:100px;display:inline-block;';
+        badge.innerHTML = `Prix affiné — moyenne cote calculée (${fmtMoney(ancien)}) + médiane LeBonCoin (${fmtMoney(data.lbc?.median)})`;
+        document.querySelector('.price-hero').appendChild(badge);
+      }
     } else if (data.status === 'error') {
       stopLbcPoll();
       document.getElementById('lbcLoading').classList.add('hidden');
